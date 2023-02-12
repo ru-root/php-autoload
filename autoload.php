@@ -156,7 +156,7 @@ abstract class Autoloader {
                     error_log($_['type'] . ': ' .$_['message'] .' file ' .$_['file'] .' line ' .$_['line'])
                         | self::clearCache()
                         | (ob_get_level() && ob_clean())
-                        | exit('Error type:' .$_['type'] .' - See log!');
+                        | exit('Error type:' .$_['type'] .' - See logs!');
                 }
             });
 
