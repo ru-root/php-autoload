@@ -24,7 +24,7 @@
  *     Autoloader::include('/path/appName/bootstrap.php');
  *    // Autoloader::register();
  *  // VS
- *     spl_autoload_register('Autoloader::autoload', TRUE, FALSE);
+ *     spl_autoload_register('Autoloader::loadClass', TRUE, FALSE);
  */
 abstract class Autoloader {
 
