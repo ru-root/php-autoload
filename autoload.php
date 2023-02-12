@@ -44,22 +44,26 @@ abstract class Autoloader {
     /** Loads the given class or interface. **/
     public static function loadClass(string $class): bool
     {
-        // PSR-4 lookup
-        $class = strtr($class, '\\', DIRECTORY_SEPARATOR);
-
         /**
+         * // PSR-4 lookup
+         * $class = strtr($class, '\\', DIRECTORY_SEPARATOR);
+         *
          * // PSR-0 lookup - !!! DEPRECATED !!!
          * if ($pos = strrpos($class, '\\'))
          *     $class = substr($class, 0, $pos = ($pos + 1))
          *              .strtr(substr($class, $pos), '_', DIRECTORY_SEPARATOR);
          * else {
+         *
+         *    // PEAR-like class name
+         *    $class = strtr($class, '_', DIRECTORY_SEPARATOR);
+         * }
          */
 
-        // PEAR-like class name
-        $class = strtr($class, '_', DIRECTORY_SEPARATOR);
+        // PSR-0 PSR-4 and PEAR-like class name lookup
+        $class = str_replace(['\\', '_'], DIRECTORY_SEPARATOR, ltrim($class, '\\'));
 
         return ($file = self::findFile('', $class))
-            ? (bool) (self::$includeFile)($file)
+            ? (bool) (self::$include)($file)
             : FALSE;
     }
 
