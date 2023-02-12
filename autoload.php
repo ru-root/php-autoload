@@ -38,7 +38,7 @@ abstract class Autoloader {
     private static array $filesMap = [];
     private static bool   $foundFile = FALSE;
     private static ?Closure $include = NULL;
-    private static ?string  $apcuPrefix  = NULL;
+    private static ?string  $apcuPrefix = NULL;
 
 
     /** Loads the given class or interface. **/
