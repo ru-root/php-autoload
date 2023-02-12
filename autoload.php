@@ -32,6 +32,7 @@ abstract class Autoloader {
 
     private const CACHE_TTL  = 86400; // 24h
     private const CACHE_FILE = __DIR__ .DIRECTORY_SEPARATOR .'autoload_cache' .self::EXT;
+    private const REGISTER   = [__CLASS__, 'loadClass'];
 
     private static array $pathsMap = [];
     private static array $filesMap = [];
@@ -145,7 +146,7 @@ abstract class Autoloader {
                 return include $_;
             };
 
-            spl_autoload_register([__CLASS__, 'loadClass'], TRUE, $prepend);
+            spl_autoload_register(self::REGISTER, TRUE, $prepend);
 
             register_shutdown_function(static function(): void {
                 // Remember in file vs apcu.
@@ -168,7 +169,7 @@ abstract class Autoloader {
     public static function unregister(): void
     {
         if ( ! is_null(self::$include)) {
-            spl_autoload_unregister([__CLASS__, 'loadClass']);
+            spl_autoload_unregister(self::REGISTER);
             self::$include = self::$apcuPrefix = NULL;
             self::$filesMap = [];
         }
