@@ -20,10 +20,9 @@
  * @example:
  * <?php
  *     Autoloader::logger(FALSE); // Enable display error
- *     Autoloader::setPath(['/path/dir', '/path/appName']);
- *     Autoloader::autoloadFunctions(); // @see Autoloader::register
- *     Autoloader::includeFile('/path/appName/bootstrap.php');
- *  // Autoloader::register();
+ *     Autoloader::setPath(['/path/dir', '/path/appName']); // auto register()
+ *     Autoloader::include('/path/appName/bootstrap.php');
+ *    // Autoloader::register();
  *  // VS
  *     spl_autoload_register('Autoloader::autoload', TRUE, FALSE);
  */
@@ -31,37 +30,21 @@ abstract class Autoloader {
 
     public const EXT = '.php';
 
-    private const CACHE_TTL = 86400; // 24h
+    private const CACHE_TTL  = 86400; // 24h
+    private const CACHE_FILE = __DIR__ .DIRECTORY_SEPARATOR .'autoload_cache' .self::EXT;
 
-    private static array   $classMap    = [];
-    private static array   $searchPaths = [];
-    private static bool     $writeFile   = FALSE;
-    private static ?Closure $includeFile = NULL;
+    private static array $pathsMap = [];
+    private static array $filesMap = [];
+    private static bool   $foundFile = FALSE;
+    private static ?Closure $include = NULL;
     private static ?string  $apcuPrefix  = NULL;
-    private static string   $fileCache   = __DIR__ .DIRECTORY_SEPARATOR .__CLASS__ .'_cache' .self::EXT;
 
 
     /** Loads the given class or interface. **/
     public static function loadClass(string $class): bool
     {
-        /**
-         * // PSR-4 lookup
-         * $class = strtr($class, '\\', DIRECTORY_SEPARATOR);
-         *
-         * // PSR-0 lookup - !!! DEPRECATED !!!
-         * if ($pos = strrpos($class, '\\'))
-         *     $class = substr($class, 0, $pos = ($pos + 1))
-         *              .strtr(substr($class, $pos), '_', DIRECTORY_SEPARATOR);
-         * else {
-         *
-         *    // PEAR-like class name
-         *    $class = strtr($class, '_', DIRECTORY_SEPARATOR);
-         * }
-         */
-
         // PSR-0 PSR-4 and PEAR-like class name lookup
         $class = str_replace(['\\', '_'], DIRECTORY_SEPARATOR, ltrim($class, '\\'));
-
         return ($file = self::findFile('', $class))
             ? (bool) (self::$include)($file)
             : FALSE;
@@ -69,43 +52,43 @@ abstract class Autoloader {
 
 
     /** Finds the path to the file where the class is defined. **/
-    public static function findFile(string $dir, string $class, string $ext = self::EXT): string|FALSE
+    public static function findFile(string $dir, string $file, string $ext = self::EXT): string|FALSE
     {
-        $class = ltrim($dir .DIRECTORY_SEPARATOR, '/\\') .$class .$ext;
-        if (isset(self::$classMap[$class]))
-            return self::$classMap[$class];
+        $file = ltrim($dir .DIRECTORY_SEPARATOR, '/\\') .$file .$ext;
+        if (isset(self::$filesMap[$file]))
+            return self::$filesMap[$file];
         elseif ( ! is_null(self::$apcuPrefix)) {
-            $file = apcu_fetch(self::$apcuPrefix .$class, $bool);
-            if ($bool) return $file;
+            $file = apcu_fetch(self::$apcuPrefix .$file, $found);
+            if ($found) return $file;
         }
 
-        $file = FALSE;
-        foreach (self::$searchPaths as & $_) {
-            if (is_file($_ .$class)) {
-                $file = self::$classMap[$class] = $_ .$class;
+        $found = FALSE;
+        foreach (self::$pathsMap as & $_) {
+            if (is_file($_ .$file)) {
+                $found = self::$filesMap[$file] = $_ .$file;
                 // Remember that this class.
-                self::$writeFile = is_null(self::$apcuPrefix)
-                    || apcu_add(self::$apcuPrefix .$class, $file, self::CACHE_TTL);
+                self::$foundFile = is_null(self::$apcuPrefix)
+                    || apcu_add(self::$apcuPrefix .$file, $found, self::CACHE_TTL);
                 break;
             }
         }
 
-        if ( ! $file) {
+        if ( ! $found) {
             // Unset that this class does not exist.
-            is_null(self::$apcuPrefix) || apcu_delete(self::$apcuPrefix .$class);
-            unset(self::$classMap[$class]);
+            is_null(self::$apcuPrefix) || apcu_delete(self::$apcuPrefix .$file);
+            unset(self::$filesMap[$file]);
         }
 
-        return $file;
+        return $found;
     }
 
 
     public static function cache(array $data = NULL): array
     {
         if (is_null($data)) {
-           if (is_file(self::$fileCache)) {
-               if ((time() - filemtime(self::$fileCache)) < self::CACHE_TTL) {
-                   return (self::$includeFile)(self::$fileCache);
+           if (is_file(self::CACHE_FILE)) {
+               if ((time() - filemtime(self::CACHE_FILE)) < self::CACHE_TTL) {
+                   return (self::$include)(self::CACHE_FILE);
                }
                self::clearCache();
            }
@@ -114,7 +97,7 @@ abstract class Autoloader {
            // This a local static variable to avoid instantiating a closure each time we need an empty handler
            ! is_writable(__DIR__)
                || set_error_handler(static function (): void {})
-               | file_put_contents(self::$fileCache, /* "\xEF\xBB\xBF" */
+               | file_put_contents(self::CACHE_FILE, /* "\xEF\xBB\xBF" */
                    '<?php /*﻿*/// Generated by ' .__CLASS__ ."::class\nreturn " .var_export($data, TRUE) .';',
                    LOCK_EX) | restore_error_handler();
         }
@@ -125,7 +108,7 @@ abstract class Autoloader {
     public static function clearCache(): void
     {
         set_error_handler(static function (): void {})
-            | unlink(self::$fileCache)
+            | unlink(self::CACHE_FILE)
             | restore_error_handler()
             | is_null(self::$apcuPrefix) || apcu_clear_cache();
     }
@@ -150,23 +133,23 @@ abstract class Autoloader {
      */
     public static function register(bool $prepend = FALSE): void
     {
-        if (is_null(self::$includeFile)) {
+        if (is_null(self::$include)) {
 
             // Silence E_WARNING to ignore "include" failures - don't use "@" to prevent silencing fatal errors
             error_reporting(E_ALL /* E_ALL ^ E_WARNING */);
 
-            self::$searchPaths = [dirname(__DIR__) .DIRECTORY_SEPARATOR];
+            self::$pathsMap = [dirname(__DIR__) .DIRECTORY_SEPARATOR];
 
             /** Scope isolated include. Prevents access to $this/self from included files. **/
-            self::$includeFile = static function(string $file): mixed {
-                return include $file;
+            self::$include = static function(string $_): mixed {
+                return include $_;
             };
 
             spl_autoload_register([__CLASS__, 'loadClass'], TRUE, $prepend);
 
             register_shutdown_function(static function(): void {
                 // Remember in file vs apcu.
-                self::$apcuPrefix || FALSE === self::$writeFile || self::cache(self::$classMap);
+                self::$apcuPrefix || FALSE === self::$foundFile || self::cache(self::$filesMap);
                 if ($_ = error_get_last()) {
                     // On error write log and remove cache and buffer
                     error_log($_['type'] . ': ' .$_['message'] .' file ' .$_['file'] .' line ' .$_['line'])
@@ -176,7 +159,7 @@ abstract class Autoloader {
                 }
             });
 
-            self::$apcuPrefix || self::$classMap = self::cache();
+            self::$apcuPrefix || self::$filesMap = self::cache();
         }
     }
 
@@ -184,10 +167,10 @@ abstract class Autoloader {
     /** Unregisters this instance as an autoloader. **/
     public static function unregister(): void
     {
-        if ( ! is_null(self::$includeFile)) {
+        if ( ! is_null(self::$include)) {
             spl_autoload_unregister([__CLASS__, 'loadClass']);
-            self::$includeFile = self::$apcuPrefix = NULL;
-            self::$classMap = [];
+            self::$include = self::$apcuPrefix = NULL;
+            self::$filesMap = [];
         }
     }
 
@@ -204,43 +187,19 @@ abstract class Autoloader {
     }
 
 
-    /** The APCu prefix in use, or null if APCu caching is not enabled. **/
-    final public static function getApcuPrefix(): ?string
-    {
-        return self::$apcuPrefix;
-    }
-
-
     /** @see self::register **/
     final public static function setPath(array $path): void
     {
         self::register();
         foreach ($path as & $path) /** FIFO **/
-              in_array($path = rtrim($path, '/\\') .DIRECTORY_SEPARATOR, self::$searchPaths, TRUE)
-                  || array_unshift(self::$searchPaths, $path);
+              in_array($path = rtrim($path, '/\\') .DIRECTORY_SEPARATOR, self::$pathsMap, TRUE)
+                  || array_unshift(self::$pathsMap, $path);
     }
 
 
-    final public static function getPath(): array
+    final public static function include(string $file, string $dir = ''): void
     {
-        return self::$searchPaths;
-    }
-
-
-    final public static function includeFile(string|array $file, string $dir = ''): void
-    {
-        $file = (array) $file;
-        foreach ($file as & $file)
-            ! is_file($file) && ! ($file = self::findFile($dir, $file)) || (self::$includeFile)($file);
-    }
-
-
-    final public static function autoloadFunctions(string $dir = 'functions', string $prefix = '_'): void
-    {
-        foreach (self::$searchPaths as & $path) {
-            if ($_ = glob($path .$dir .DIRECTORY_SEPARATOR .$prefix .'*' .self::EXT, GLOB_NOSORT | GLOB_ERR))
-               foreach ($_ as & $_) (self::$includeFile)($_);
-        }
+       ! is_file($file) && ! ($file = self::findFile(strtr($dir, '\\', DIRECTORY_SEPARATOR), $file)) || (self::$include)($file);
     }
 }
 
