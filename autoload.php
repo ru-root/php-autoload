@@ -59,8 +59,8 @@ abstract class Autoloader {
         if (isset(self::$filesMap[$file]))
             return self::$filesMap[$file];
         elseif ( ! is_null(self::$apcuPrefix)) {
-            $file = apcu_fetch(self::$apcuPrefix .$file, $found);
-            if ($found) return $file;
+            $_ = apcu_fetch(self::$apcuPrefix .$file, $found);
+            if ($found) return $_;
         }
 
         $found = FALSE;
