@@ -68,7 +68,7 @@ abstract class Autoloader {
             if (is_file($_ .$file)) {
                 $found = self::$filesMap[$file] = $_ .$file;
                 // Remember that this class.
-                self::$foundFile = is_null(self::$apcuPrefix)
+                (self::$foundFile = is_null(self::$apcuPrefix))
                     || apcu_add(self::$apcuPrefix .$file, $found, self::CACHE_TTL);
                 break;
             }
@@ -76,7 +76,7 @@ abstract class Autoloader {
 
         if ( ! $found) {
             // Unset that this class does not exist.
-            self::$foundFile = is_null(self::$apcuPrefix) || apcu_delete(self::$apcuPrefix .$file);
+            (self::$foundFile = is_null(self::$apcuPrefix)) || apcu_delete(self::$apcuPrefix .$file);
             unset(self::$filesMap[$file]);
         }
 
