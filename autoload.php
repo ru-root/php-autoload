@@ -198,9 +198,11 @@ abstract class Autoloader {
     }
 
 
-    final public static function include(string $file, string $dir = ''): void
+    final public static function include(string $file, string $dir = ''): mixed
     {
-       ! is_file($file) && ! ($file = self::findFile(strtr($dir, '\\', DIRECTORY_SEPARATOR), $file)) || (self::$include)($file);
+       return is_file($file) || ($file = self::findFile(strtr($dir, '\\', DIRECTORY_SEPARATOR), $file))
+           ? (self::$include)($file)
+           : NULL;
     }
 }
 
