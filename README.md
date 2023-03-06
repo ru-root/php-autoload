@@ -13,3 +13,23 @@ ____
 для повторного использования, с минимальными затратами времени на интерпретацию автозагрузчика 
 
 
+# Example
+```
+  <?php
+      (require __DIR__ .DIRECTORY_SEPARATOR .'vendor' .DIRECTORY_SEPARATOR .'autoload.php')
+          // ->setApcu('APP_NAME')
+          ->setCacheKey('CacheKeyName')
+          ->logger(false) // FALSE Display error, (TRUE or empty) Log error
+          ->setPaths([
+              __DIR__ .DIRECTORY_SEPARATOR .'classes',
+              __DIR__ .DIRECTORY_SEPARATOR .'vendor',
+              APP_PATH .'classes',
+              APP_PATH .'vendor',
+          ])->includes([
+              'functions',
+              'FastRoute\functions',
+              'bootstrap'
+          ]);
+  
+    Autoloader::include('settings', 'config');
+```
