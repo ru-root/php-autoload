@@ -17,8 +17,8 @@ ____
 ```
   <?php
       (require __DIR__ .DIRECTORY_SEPARATOR .'vendor' .DIRECTORY_SEPARATOR .'autoload.php')
-          // ->setApcu('APP_NAME')
-          ->setCacheKey('CacheKeyName')
+          // ->setApcu('App_Name')
+          ->setCacheKey('Cache_Key_Name')
           ->logger(false) // FALSE Display error, (TRUE or empty) Log error
           ->setPaths([
               __DIR__ .DIRECTORY_SEPARATOR .'classes',
@@ -27,9 +27,8 @@ ____
               APP_PATH .'vendor',
           ])->includes([
               'functions',
-              'FastRoute\functions',
               'bootstrap'
           ]);
   
-    Autoloader::include('settings', 'config');
+    Autoload::include('path/settings', 'config', '.inc');
 ```
