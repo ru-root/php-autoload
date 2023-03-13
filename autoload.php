@@ -57,7 +57,6 @@ class Autoloader
 
     /**
      * Registers this instance as an autoloader.
-     * @param bool|int|string $log dir path or code E_ALL ^ E_WARNING ... or FALSE off error
      * Silence E_ALL ^ E_WARNING to ignore "include" failures - don't use "@" to prevent silencing fatal errors!
      */
     final public static function register()
