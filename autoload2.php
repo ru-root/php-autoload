@@ -93,10 +93,10 @@ class Autoloader
                 final protected function __construct() // No type
                 {
                     /** Scope isolated include. Prevents access to $this/self from included files. **/
-                    self::$include = static function(string $_, array $__ = []): mixed {
+                    self::$include = static function(string $_, array $datas = []): mixed {
                         // Import variables to local namespace
-                        ! $__ || \extract($__, \EXTR_OVERWRITE);
-                        unset($__);
+                        ! $datas || \extract($datas, \EXTR_OVERWRITE);
+                        unset($datas);
                         return include $_;
                     };
 
