@@ -19,7 +19,7 @@ ____
       (require __DIR__ .DIRECTORY_SEPARATOR .'vendor' .DIRECTORY_SEPARATOR .'autoload.php')
           // ->setApcu('App_Name')
           ->setCacheKey('Cache_Key_Name')
-          ->logger(false) // FALSE Display error, (TRUE or empty) Log error
+          ->logger(FASLE) // FALSE Display error, (TRUE or empty) Log error
           ->setPaths([
               __DIR__ .DIRECTORY_SEPARATOR .'classes',
               __DIR__ .DIRECTORY_SEPARATOR .'vendor',
@@ -30,5 +30,5 @@ ____
               'bootstrap'
           ]);
   
-    Autoload::include('path/settings', 'config', '.inc');
+    Autoload::include('config', 'path/settings', '.inc');
 ```
