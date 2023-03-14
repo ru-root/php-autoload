@@ -31,6 +31,7 @@
   * use function error_reporting; // used 2
   *
   * use const DIRECTORY_SEPARATOR; // used 9
+  * use const __DIR__;             // used 3
   */
  /**
   * @VERSION '2.0'
@@ -57,10 +58,10 @@ class Autoloader
 {
     final public const TTL = 86400; // 24h
     final public const EXT = '.php';
-    final public const ERROR_FILE    = __DIR__ .DIRECTORY_SEPARATOR .'..' .DIRECTORY_SEPARATOR .'php_autoload.log';
-    final public const ERROR_STR_LOG = 'PHP %s: %s in %s on line %s';
-    final public const ERROR_STR_DSP = 'PHP %s: %s - See logs!';
-    final public const ERROR_TYPE    = [
+    final protected const ERROR_FILE    = __DIR__ .DIRECTORY_SEPARATOR .'..' .DIRECTORY_SEPARATOR .'php_autoload.log';
+    final protected const ERROR_STR_LOG = 'PHP %s: %s in %s on line %s';
+    final protected const ERROR_STR_DSP = 'PHP %s: %s - See logs!';
+    final protected const ERROR_TYPE    = [
         1    => 'Error',
         256  => 'Error',
         4    => 'Parse',
