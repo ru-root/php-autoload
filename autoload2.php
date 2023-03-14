@@ -1,22 +1,37 @@
 <?php /*﻿*/ declare(strict_types=1);
-/*
- * @license https://opensource.org/licenses/MIT  MIT License
- * The MIT License (MIT)
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *
- * Simple Recursive Autoloader
- * A simple autoloader that loads class files recursively starting in the directory
- * where this class resides.  Additional options can be provided to control the naming
- * convention of the class files.
- */
-// namespace Ruroot;
+ /**
+  * @license https://opensource.org/licenses/MIT  MIT License
+  * The MIT License (MIT)
+  *
+  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  * SOFTWARE.
+  *
+  * Simple Recursive Autoloader
+  * A simple autoloader that loads class files recursively starting in the directory
+  * where this class resides.  Additional options can be provided to control the naming
+  * convention of the class files.
+  */
+ /**
+  * namespace Ruroot;
+  *
+  * use function is_null;         // used 6
+  * use function is_file;         // used 4
+  * use function ini_set;         // used 5
+  * use function sprintf;         // used 3
+  * use function is_writable;     // used 2
+  * use function rtrim;           // used 2
+  * use function ltrim;           // used 2
+  * use function strtr;           // used 2
+  * use function in_array;        // used 2
+  * use function error_reporting; // used 2
+  *
+  * use const DIRECTORY_SEPARATOR; // used 9
+  */
  /**
   * @VERSION '2.0'
   *
@@ -25,7 +40,7 @@
   *    (require __DIR__ .DIRECTORY_SEPARATOR .'vendor' .DIRECTORY_SEPARATOR .'autoload.php')
   *        // ->setApcu('App_Name')
   *        ->setCacheKey('Cache_Key_Name')
-  *        ->logger(false) // FALSE Display error, (TRUE or empty) Log error
+  *        ->logger(FALSE) // FALSE Display error, (TRUE or empty) Log error
   *        ->setPaths([
   *            __DIR__ .DIRECTORY_SEPARATOR .'classes',
   *            __DIR__ .DIRECTORY_SEPARATOR .'vendor',
@@ -80,21 +95,21 @@ class Autoloader
                     /** Scope isolated include. Prevents access to $this/self from included files. **/
                     self::$include = static function(string $_, array $__ = []): mixed {
                         // Import variables to local namespace
-                        ! $__ || extract($__, EXTR_OVERWRITE);
+                        ! $__ || \extract($__, \EXTR_OVERWRITE);
                         unset($__);
                         return include $_;
                     };
 
                     /** Loads the given class or interface. **/
                     // spl_autoload_extensions(Autoloader::EXT);
-                    spl_autoload_register(static function (string $class): bool {
+                    \spl_autoload_register(static function (string $class): bool {
                         // PSR-0 and PEAR-like class name lookup
-                        return ($class = self::findFiles('', str_replace(['\\', '_'], DIRECTORY_SEPARATOR, ltrim($class, '\\'))))
+                        return ($class = self::findFiles('', \str_replace(['\\', '_'], DIRECTORY_SEPARATOR, ltrim($class, '\\'))))
                             ? (bool) include $class
                             : FALSE;
                     });
 
-                    register_shutdown_function(static function(): void {
+                    \register_shutdown_function(static function(): void {
                         // Remember
                         ! is_null(self::$apcu) || FALSE === self::$found || self::cacheFile(self::$files);
                         // Error
@@ -113,12 +128,12 @@ class Autoloader
 
                     if (isset(self::$files["{$file}{$array}"]))
                         return self::$files["{$file}{$array}"];
-                    elseif (self::$apcu && ($result = apcu_fetch(self::$apcu ."{$file}{$array}", $itemFetched)) && $itemFetched) {
+                    elseif (self::$apcu && ($result = \apcu_fetch(self::$apcu ."{$file}{$array}", $itemFetched)) && $itemFetched) {
                         return $result;
                     }
 
                     $found = [];
-                    $_ = ('_array' === $array) ? array_reverse(self::$paths) : self::$paths;
+                    $_ = ('_array' === $array) ? \array_reverse(self::$paths) : self::$paths;
                     foreach ($_ as $_) {
                         if (is_file($_ .$file)) {
                             if ('_array' === $array)
@@ -132,7 +147,7 @@ class Autoloader
 
                     if ($found) {
                         if ( ! (self::$found = is_null(self::$apcu))) {
-                            apcu_add(self::$apcu ."{$file}{$array}", $found, self::TTL);
+                            \apcu_add(self::$apcu ."{$file}{$array}", $found, self::TTL);
                         } else {
                             self::$files["{$file}{$array}"] = $found;
                             self::$found = TRUE;
@@ -147,35 +162,35 @@ class Autoloader
                 {
                     if (is_null($data)) {
                         if (is_file(self::$cacheFile)) {
-                            if ((time() - filemtime(self::$cacheFile)) < self::TTL) {
+                            if ((\time() - \filemtime(self::$cacheFile)) < self::TTL) {
                                 return include self::$cacheFile;
                             }
                             self::clearCache();
                         }
                         $data = [];
                     } elseif (is_writable(dirname(self::$cacheFile))) {
-                        file_put_contents(self::$cacheFile, sprintf(self::$cacheFileStr, var_export($data, TRUE)), LOCK_EX);
+                        \file_put_contents(self::$cacheFile, sprintf(self::$cacheFileStr, \var_export($data, TRUE)), \LOCK_EX);
                     }
                     return $data;
                 }
 
                 final public static function clearCache(): void
                 {
-                    unlink(self::$cacheFile);
-                    is_null(self::$apcu) || apcu_clear_cache();
+                    \unlink(self::$cacheFile);
+                    is_null(self::$apcu) || \apcu_clear_cache();
                 }
 
                 final public function logger(bool|int|string $log = TRUE): static
                 {
                     static $static;
                     if ( ! isset($static) || $static !== $log) {
-                        error_reporting((is_int($log) ? $log : E_ALL));
+                        error_reporting((\is_int($log) ? $log : E_ALL));
                         ini_set('html_errors',                         '0');
                         ini_set('log_errors',             $log ? '1' : '0');
                         ini_set('display_errors',         $log ? '0' : '1');
                         ini_set('display_startup_errors', $log ? '0' : '1');
                         ! ($static = $log)
-                            || ini_set('error_log', (is_string($log) ? $log : self::ERROR_FILE));
+                            || ini_set('error_log', (\is_string($log) ? $log : self::ERROR_FILE));
                     }
                     return $this;
                 }
@@ -184,7 +199,7 @@ class Autoloader
                 final public function setApcu(string $apcu): self
                 {
                     // @link https://www.php.net/manual/ru/apcu.configuration.php#ini.apcu.enabled
-                    if (function_exists('apcu_enabled') && apcu_enabled()) {
+                    if (\function_exists('apcu_enabled') && \apcu_enabled()) {
                         self::$apcu = $apcu;
                     }
                     return $this;
@@ -195,7 +210,7 @@ class Autoloader
                     if (is_null(self::$apcu)) {
                         self::$cacheFile = (is_writable($path)
                             ? rtrim($path, '\\/')
-                            : __DIR__) .DIRECTORY_SEPARATOR .'_' .$cacheKey .'_' .basename(self::$cacheFile);
+                            : __DIR__) .DIRECTORY_SEPARATOR .'_' .$cacheKey .'_' .\basename(self::$cacheFile);
 
                         self::$files = (array) self::cacheFile();
                     }
@@ -206,7 +221,7 @@ class Autoloader
                 {
                     foreach ($paths as $paths) /** FIFO **/ {
                         in_array($paths = rtrim($paths, '/\\') .DIRECTORY_SEPARATOR, self::$paths, TRUE)
-                            || array_unshift(self::$paths, $paths);
+                            || \array_unshift(self::$paths, $paths);
                     }
                     return $this;
                 }
@@ -224,7 +239,7 @@ class Autoloader
                 final public function unregister(): static
                 {
                     if (self::$include) {
-                        spl_autoload_unregister(spl_autoload_functions()[0]);
+                        \spl_autoload_unregister(\spl_autoload_functions()[0]);
                         self::clearCache();
                         self::$include = self::$apcu = NULL;
                         self::$files = [];
@@ -251,21 +266,21 @@ class Autoloader
     final protected static function registerShutdownErrorLast(): string|int
     {
         $message = 0;
-        if ($err = error_get_last()) {
+        if ($err = \error_get_last()) {
             $err['type'] = self::ERROR_TYPE[$err['type']] ?? 'Unknown';
-            if (0 === ($message = (int) filter_var(ini_get('display_errors'), FILTER_VALIDATE_BOOLEAN))) {
+            if (0 === ($message = (int) \filter_var(ini_get('display_errors'), \FILTER_VALIDATE_BOOLEAN))) {
                 $message = sprintf(self::ERROR_STR_DSP, $err['type'], $err['message']);
             }
 
             if (0 === $message || E_ALL !== error_reporting()) {
-                error_log(
+                \error_log(
                     sprintf(self::ERROR_STR_LOG, $err['type'], $err['message'], $err['file'], $err['line'])
                 );
             }
 
             if (in_array($err['type'], [E_PARSE, E_ERROR, E_USER_ERROR])) {
                 $message = 1;
-                ob_get_level() && ob_clean();
+                \ob_get_level() && \ob_clean();
             }
         }
 
