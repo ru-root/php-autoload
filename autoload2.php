@@ -286,6 +286,5 @@ class Autoloader
     }
 }
 
-final class Autoload extends Autoloader { /* @see Autoloader */ }
-return Autoload::register();
+return Autoloader::register();
 // EOF
